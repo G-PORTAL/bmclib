@@ -53,12 +53,12 @@ func Test_fruInfo(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	frus, err := aClient.fruInfo(context.TODO())
+	fruResp, err := aClient.fruInfo(context.TODO())
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	assert.Equal(t, 3, len(frus))
+	assert.Equal(t, "ASRockRack", fruResp.Board.Manufacturer)
 }
 
 func Test_sensors(t *testing.T) {

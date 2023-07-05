@@ -75,32 +75,37 @@ func (a *ASRockRack) systemHealth(ctx context.Context, device *common.Device) er
 
 // fruAttributes collects chassis information
 func (a *ASRockRack) fruAttributes(ctx context.Context, device *common.Device) error {
-	components, err := a.fruInfo(ctx)
+	fru, err := a.fruInfo(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, component := range components {
-		switch component.Component {
-		case "board":
-			device.Vendor = component.Manufacturer
-			device.Model = component.ProductName
-			device.Serial = component.SerialNumber
-		case "chassis":
-			device.Enclosures = append(device.Enclosures, &common.Enclosure{
-				Common: common.Common{
-					Serial:      component.SerialNumber,
-					Description: component.Type,
-				},
-			})
-		case "product":
-			device.Metadata["product.manufacturer"] = component.Manufacturer
-			device.Metadata["product.name"] = component.ProductName
-			device.Metadata["product.part_number"] = component.PartNumber
-			device.Metadata["product.version"] = component.ProductVersion
-			device.Metadata["product.serialnumber"] = component.SerialNumber
-		}
-	}
+	// system
+	device.Model = fru.Board.ProductName
+	device.Vendor = fru.Board.Manufacturer
+	device.Serial = fru.Board.SerialNumber
+
+	// board
+	device.Mainboard.Model = fru.Board.ProductName
+	device.Mainboard.Vendor = fru.Board.Manufacturer
+	device.Mainboard.Serial = fru.Board.SerialNumber
+
+	// chassis
+	device.Enclosures = append(device.Enclosures, &common.Enclosure{
+		Common: common.Common{
+			Description: fru.Chassis.Type,
+			Model:       fru.Chassis.ModelExtra,
+			Serial:      fru.Chassis.SerialNumber,
+			ProductName: fru.Chassis.PartNumber,
+		},
+	})
+
+	// additional
+	device.Metadata["product.manufacturer"] = fru.Product.Manufacturer
+	device.Metadata["product.name"] = fru.Product.ProductName
+	device.Metadata["product.part_number"] = fru.Product.PartNumber
+	device.Metadata["product.version"] = fru.Product.ProductVersion
+	device.Metadata["product.serialnumber"] = fru.Product.SerialNumber
 
 	return nil
 }

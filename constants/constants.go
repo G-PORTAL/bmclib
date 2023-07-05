@@ -20,9 +20,9 @@ const (
 	Supermicro = "Supermicro"
 	// Cloudline is the constant that defines the cloudlines
 	Cloudline = "Cloudline"
-	// Quanta is the contant to identify Quanta hardware
+	// Quanta is the constant to identify Quanta hardware
 	Quanta = "Quanta"
-	// Quanta is the contant to identify Intel hardware
+	// Intel is the constant to identify Intel hardware
 	Intel = "Intel"
 
 	// Redfish firmware apply at constants

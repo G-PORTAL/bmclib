@@ -56,19 +56,58 @@ type component struct {
 
 // fru is part of a payload returned by the fru info endpoint
 type fru struct {
-	Component      string
-	Version        int    `json:"version"`
-	Length         int    `json:"length"`
-	Language       int    `json:"language"`
-	Manufacturer   string `json:"manufacturer"`
-	ProductName    string `json:"product_name"`
-	PartNumber     string `json:"part_number"`
-	ProductVersion string `json:"product_version"`
-	SerialNumber   string `json:"serial_number"`
-	AssetTag       string `json:"asset_tag"`
-	FruFileID      string `json:"fru_file_id"`
-	Type           string `json:"type"`
-	CustomFields   string `json:"custom_fields"`
+	Device struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	} `json:"device"`
+	CommonHeader struct {
+		Version                    int `json:"version"`
+		InternalUseAreaStartOffset int `json:"internal_use_area_start_offset"`
+		ChassisInfoAreaStartOffset int `json:"chassis_info_area_start_offset"`
+		BoardInfoAreaStartOffset   int `json:"board_info_area_start_offset"`
+		ProductInfoAreaStartOffset int `json:"product_info_area_start_offset"`
+		MultiRecordAreaStartOffset int `json:"multi_record_area_start_offset"`
+	} `json:"common_header"`
+	Chassis struct {
+		Version        int    `json:"version"`
+		Length         int    `json:"length"`
+		Type           string `json:"type"`
+		PartNumber     string `json:"part_number"`
+		SerialNumber   string `json:"serial_number"`
+		ManufacExtra   string `json:"manufac_extra"`
+		VersionExtra   string `json:"version_extra"`
+		AssetTagExtra  string `json:"asset_tag_extra"`
+		SkuNumberExtra string `json:"sku_number_extra"`
+		ModelExtra     string `json:"model_extra"`
+	} `json:"chassis"`
+	Board struct {
+		Version       int    `json:"version"`
+		Length        int    `json:"length"`
+		Language      int    `json:"language"`
+		Date          string `json:"date"`
+		Manufacturer  string `json:"manufacturer"`
+		ProductName   string `json:"product_name"`
+		SerialNumber  string `json:"serial_number"`
+		PartNumber    string `json:"part_number"`
+		FruFileID     string `json:"fru_file_id"`
+		VersionExtra  string `json:"version_extra"`
+		AssetTagExtra string `json:"asset_tag_extra"`
+	} `json:"board"`
+	Product struct {
+		Version        int    `json:"version"`
+		Length         int    `json:"length"`
+		Language       int    `json:"language"`
+		Manufacturer   string `json:"manufacturer"`
+		ProductName    string `json:"product_name"`
+		PartNumber     string `json:"part_number"`
+		ProductVersion string `json:"product_version"`
+		SerialNumber   string `json:"serial_number"`
+		AssetTag       string `json:"asset_tag"`
+		FruFileID      string `json:"fru_file_id"`
+		UUIDExtra      string `json:"UUID_extra"`
+		SkuNumberExtra string `json:"sku_number_extra"`
+		FamilyExtra    string `json:"family_extra"`
+	} `json:"product"`
 }
 
 // sensor is part of the payload returned by the sensors endpoint
@@ -374,7 +413,7 @@ func (a *ASRockRack) inventoryInfo(ctx context.Context) ([]*component, error) {
 }
 
 // Query the fru info endpoint
-func (a *ASRockRack) fruInfo(ctx context.Context) ([]*fru, error) {
+func (a *ASRockRack) fruInfo(ctx context.Context) (*fru, error) {
 	resp, statusCode, err := a.queryHTTPS(ctx, "api/fru", "GET", nil, nil, 0)
 	if err != nil {
 		return nil, err
@@ -384,39 +423,13 @@ func (a *ASRockRack) fruInfo(ctx context.Context) ([]*fru, error) {
 		return nil, fmt.Errorf("non 200 response: %d", statusCode)
 	}
 
-	data := []map[string]*fru{}
+	data := fru{}
 	err = json.Unmarshal(resp, &data)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(data) == 0 {
-		return nil, fmt.Errorf("no FRU data returned")
-	}
-
-	frus := []*fru{}
-	for key, f := range data[0] {
-		switch key {
-		case "chassis", "board", "product":
-			frus = append(frus, &fru{
-				Component:      key,
-				Version:        f.Version,
-				Length:         f.Length,
-				Language:       f.Language,
-				Manufacturer:   f.Manufacturer,
-				ProductName:    f.ProductName,
-				PartNumber:     f.PartNumber,
-				ProductVersion: f.ProductVersion,
-				SerialNumber:   f.SerialNumber,
-				AssetTag:       f.SerialNumber,
-				FruFileID:      f.FruFileID,
-				CustomFields:   f.CustomFields,
-				Type:           f.Type,
-			})
-		}
-	}
-
-	return frus, nil
+	return &data, nil
 }
 
 // Query the sensors  endpoint
