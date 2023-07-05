@@ -112,26 +112,50 @@ type fru struct {
 
 // sensor is part of the payload returned by the sensors endpoint
 type sensor struct {
-	ID                            int     `json:"id"`
-	SensorNumber                  int     `json:"sensor_number"`
-	Name                          string  `json:"name"`
-	OwnerID                       int     `json:"owner_id"`
-	OwnerLun                      int     `json:"owner_lun"`
-	RawReading                    float64 `json:"raw_reading"`
-	Type                          string  `json:"type"`
-	TypeNumber                    int     `json:"type_number"`
-	Reading                       float64 `json:"reading"`
-	SensorState                   int     `json:"sensor_state"`
-	DiscreteState                 int     `json:"discrete_state"`
-	SettableReadableThreshMask    int     `json:"settable_readable_threshMask"`
-	LowerNonRecoverableThreshold  float64 `json:"lower_non_recoverable_threshold"`
-	LowerCriticalThreshold        float64 `json:"lower_critical_threshold"`
-	LowerNonCriticalThreshold     float64 `json:"lower_non_critical_threshold"`
-	HigherNonCriticalThreshold    float64 `json:"higher_non_critical_threshold"`
-	HigherCriticalThreshold       float64 `json:"higher_critical_threshold"`
-	HigherNonRecoverableThreshold float64 `json:"higher_non_recoverable_threshold"`
-	Accessible                    int     `json:"accessible"`
-	Unit                          string  `json:"unit"`
+	ID                            int             `json:"id"`
+	SensorNumber                  int             `json:"sensor_number"`
+	Name                          string          `json:"name"`
+	OwnerID                       int             `json:"owner_id"`
+	OwnerLun                      int             `json:"owner_lun"`
+	RawReading                    int             `json:"raw_reading"`
+	Type                          string          `json:"type"`
+	TypeNumber                    int             `json:"type_number"`
+	Reading                       float64         `json:"reading"`
+	SensorState                   int             `json:"sensor_state"`
+	DiscreteState                 int             `json:"discrete_state"`
+	Accessible                    int             `json:"accessible"`
+	SettableFlag                  int             `json:"settable_flag"`
+	LowerNonRecoverableThreshold  sensorThreshold `json:"lower_non_recoverable_threshold"`
+	LowerCriticalThreshold        sensorThreshold `json:"lower_critical_threshold"`
+	LowerNonCriticalThreshold     sensorThreshold `json:"lower_non_critical_threshold"`
+	HigherNonCriticalThreshold    sensorThreshold `json:"higher_non_critical_threshold"`
+	HigherCriticalThreshold       sensorThreshold `json:"higher_critical_threshold"`
+	HigherNonRecoverableThreshold sensorThreshold `json:"higher_non_recoverable_threshold"`
+	Unit                          string          `json:"unit"`
+}
+
+type sensorThreshold float64
+
+// UnmarshalJSON parse sensorThreshold json value, when fails then return 0+
+// TLDR: asrockrack returns "NA" for some sensors, which is not a type safe json value
+func (t *sensorThreshold) UnmarshalJSON(b []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	switch v := v.(type) {
+	case float64:
+		*t = 0
+	case string:
+		if v == "NA" {
+			*t = 0
+		} else {
+			return fmt.Errorf("invalid value %q for SensorThreshold", v)
+		}
+	default:
+		return fmt.Errorf("invalid value %v for SensorThreshold", v)
+	}
+	return nil
 }
 
 // Payload to preseve config when updating the BMC firmware
@@ -394,21 +418,22 @@ func (a *ASRockRack) postCodeInfo(ctx context.Context) (*biosPOSTCode, error) {
 
 // Query the inventory info endpoint
 func (a *ASRockRack) inventoryInfo(ctx context.Context) ([]*component, error) {
-	resp, statusCode, err := a.queryHTTPS(ctx, "api/asrr/inventory_info", "GET", nil, nil, 0)
-	if err != nil {
-		return nil, err
-	}
+	/*	resp, statusCode, err := a.queryHTTPS(ctx, "api/asrr/inventory_info", "GET", nil, nil, 0)
+		if err != nil {
+			return nil, err
+		}
 
-	if statusCode != http.StatusOK {
-		return nil, fmt.Errorf("non 200 response: %d", statusCode)
-	}
+		if statusCode != http.StatusOK {
+			return nil, fmt.Errorf("non 200 response: %d", statusCode)
+		}
+	*/
 
 	components := []*component{}
-	err = json.Unmarshal(resp, &components)
-	if err != nil {
-		return nil, err
-	}
-
+	/*	err = json.Unmarshal(resp, &components)
+		if err != nil {
+			return nil, err
+		}
+	*/
 	return components, nil
 }
 
