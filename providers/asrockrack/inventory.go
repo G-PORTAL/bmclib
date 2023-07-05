@@ -3,8 +3,9 @@ package asrockrack
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net"
 
-	"github.com/bmc-toolbox/bmclib/v2/constants"
 	"github.com/bmc-toolbox/common"
 )
 
@@ -152,59 +153,31 @@ func (a *ASRockRack) systemAttributes(ctx context.Context, device *common.Device
 
 	device.Metadata["node_id"] = fwInfo.NodeID
 
-	components, err := a.inventoryInfo(ctx)
+	baseBoardInfo, err := a.hostInterfaceBaseboardInfo(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, component := range components {
-		switch component.DeviceType {
-		case "CPU":
-			device.CPUs = append(device.CPUs,
-				&common.CPU{
-					Common: common.Common{
-						Vendor: component.ProductManufacturerName,
-						Model:  component.ProductName,
-						Firmware: &common.Firmware{
-							Installed: fwInfo.MicroCodeVersion,
-							Metadata: map[string]string{
-								"Intel_ME_version": fwInfo.MEVersion,
-							},
-						},
-					},
-				},
-			)
-		case "Memory":
-			device.Memory = append(device.Memory,
-				&common.Memory{
-					Common: common.Common{
-						Vendor:      component.ProductManufacturerName,
-						Serial:      component.ProductSerialNumber,
-						Description: component.ProductExtra,
-					},
-
-					PartNumber: component.ProductPartNumber,
-					Type:       component.DeviceName,
-				},
-			)
-
-		case "Storage device":
-			var vendor string
-
-			if component.ProductManufacturerName == "N/A" &&
-				component.ProductPartNumber != "N/A" {
-				vendor = constants.VendorFromProductName(component.ProductPartNumber)
+	for _, info := range baseBoardInfo {
+		for _, nic := range info.NetworkInterface {
+			macAddress, err := net.ParseMAC(nic.MACAddress)
+			if err != nil {
+				continue
 			}
 
-			device.Drives = append(device.Drives,
-				&common.Drive{
-					Common: common.Common{
-						Vendor:      vendor,
-						Serial:      component.ProductSerialNumber,
-						ProductName: component.ProductPartNumber,
+			device.NICs = append(device.NICs, &common.NIC{
+				ID: fmt.Sprintf("%v", nic.ID),
+				NICPorts: []*common.NICPort{
+					{
+						ID: fmt.Sprintf("%v", nic.ID),
+						// gigabit ethernet
+						SpeedBits:  1000000000,
+						MacAddress: macAddress.String(),
+						LinkStatus: nic.InterfaceEnabled,
 					},
 				},
-			)
+			})
+
 		}
 
 	}

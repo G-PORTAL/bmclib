@@ -40,18 +40,29 @@ type biosPOSTCode struct {
 	PostData   int `json:"postdata"`
 }
 
-// component is part of a payload returned by the inventory info endpoint
-type component struct {
-	DeviceID                int    `json:"device_id"`
-	DeviceName              string `json:"device_name"`
-	DeviceType              string `json:"device_type"`
-	ProductManufacturerName string `json:"product_manufacturer_name"`
-	ProductName             string `json:"product_name"`
-	ProductPartNumber       string `json:"product_part_number"`
-	ProductVersion          string `json:"product_version"`
-	ProductSerialNumber     string `json:"product_serial_number"`
-	ProductAssetTag         string `json:"product_asset_tag"`
-	ProductExtra            string `json:"product_extra"`
+type hostInterfaceBaseboardInfo []struct {
+	BaseboardInfo    []baseboardInfo    `json:"baseboard_info"`
+	NetworkInterface []networkInterface `json:"NetworkInterface"`
+}
+type baseboardInfo struct {
+	Name            string `json:"Name"`
+	Description     string `json:"Description"`
+	FirmwareVersion string `json:"FirmwareVersion"`
+	Model           string `json:"Model"`
+	State           string `json:"State"`
+	PowerState      string `json:"PowerState"`
+}
+type networkInterface struct {
+	ID                  int    `json:"id"`
+	Name                string `json:"Name"`
+	MACAddress          string `json:"MACAddress"`
+	InterfaceEnabled    string `json:"InterfaceEnabled"`
+	IPv4Addresses       string `json:"IPv4Addresses"`
+	HostName            string `json:"HostName"`
+	State               string `json:"State"`
+	FullDuplex          string `json:"FullDuplex"`
+	PermanentMACAddress string `json:"PermanentMACAddress"`
+	Wwpn                string `json:"WWPN"`
 }
 
 // fru is part of a payload returned by the fru info endpoint
@@ -417,24 +428,23 @@ func (a *ASRockRack) postCodeInfo(ctx context.Context) (*biosPOSTCode, error) {
 }
 
 // Query the inventory info endpoint
-func (a *ASRockRack) inventoryInfo(ctx context.Context) ([]*component, error) {
-	/*	resp, statusCode, err := a.queryHTTPS(ctx, "api/asrr/inventory_info", "GET", nil, nil, 0)
-		if err != nil {
-			return nil, err
-		}
+func (a *ASRockRack) hostInterfaceBaseboardInfo(ctx context.Context) (hostInterfaceBaseboardInfo, error) {
+	resp, statusCode, err := a.queryHTTPS(ctx, "api/host_inventory/host_interface_baseboard_info", "GET", nil, nil, 0)
+	if err != nil {
+		return nil, err
+	}
 
-		if statusCode != http.StatusOK {
-			return nil, fmt.Errorf("non 200 response: %d", statusCode)
-		}
-	*/
+	if statusCode != http.StatusOK {
+		return nil, fmt.Errorf("non 200 response: %d", statusCode)
+	}
 
-	components := []*component{}
-	/*	err = json.Unmarshal(resp, &components)
-		if err != nil {
-			return nil, err
-		}
-	*/
-	return components, nil
+	b := hostInterfaceBaseboardInfo{}
+	err = json.Unmarshal(resp, &b)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
 
 // Query the fru info endpoint
