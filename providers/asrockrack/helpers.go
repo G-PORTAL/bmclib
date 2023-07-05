@@ -28,10 +28,10 @@ type firmwareInfo struct {
 	BMCVersion       string `json:"BMC_fw_version"`
 	BIOSVersion      string `json:"BIOS_fw_version"`
 	MEVersion        string `json:"ME_fw_version"`
-	MicrocodeVersion string `json:"Micro_Code_version"`
+	PSPVersion       string `json:"PSP_fw_version"`
+	MicroCodeVersion string `json:"Micro_Code_version"`
 	CPLDVersion      string `json:"CPLD_version"`
-	CMVersion        string `json:"CM_version"`
-	BPBVersion       string `json:"BPB_version"`
+	BPVersion        string `json:"BP_version"`
 	NodeID           string `json:"Node_id"`
 }
 
@@ -413,7 +413,7 @@ func (a *ASRockRack) inventoryInfo(ctx context.Context) ([]*component, error) {
 }
 
 // Query the fru info endpoint
-func (a *ASRockRack) fruInfo(ctx context.Context) (*fru, error) {
+func (a *ASRockRack) fruInfo(ctx context.Context) ([]fru, error) {
 	resp, statusCode, err := a.queryHTTPS(ctx, "api/fru", "GET", nil, nil, 0)
 	if err != nil {
 		return nil, err
@@ -423,13 +423,13 @@ func (a *ASRockRack) fruInfo(ctx context.Context) (*fru, error) {
 		return nil, fmt.Errorf("non 200 response: %d", statusCode)
 	}
 
-	data := fru{}
+	data := make([]fru, 0)
 	err = json.Unmarshal(resp, &data)
 	if err != nil {
 		return nil, err
 	}
 
-	return &data, nil
+	return data, nil
 }
 
 // Query the sensors  endpoint

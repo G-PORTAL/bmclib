@@ -2,6 +2,7 @@ package asrockrack
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bmc-toolbox/bmclib/v2/constants"
 	"github.com/bmc-toolbox/common"
@@ -75,10 +76,16 @@ func (a *ASRockRack) systemHealth(ctx context.Context, device *common.Device) er
 
 // fruAttributes collects chassis information
 func (a *ASRockRack) fruAttributes(ctx context.Context, device *common.Device) error {
-	fru, err := a.fruInfo(ctx)
+	frus, err := a.fruInfo(ctx)
 	if err != nil {
 		return err
 	}
+
+	if len(frus) != 1 {
+		return errors.New("no fru information found")
+	}
+
+	fru := frus[0]
 
 	// system
 	device.Model = fru.Board.ProductName
@@ -159,7 +166,7 @@ func (a *ASRockRack) systemAttributes(ctx context.Context, device *common.Device
 						Vendor: component.ProductManufacturerName,
 						Model:  component.ProductName,
 						Firmware: &common.Firmware{
-							Installed: fwInfo.MicrocodeVersion,
+							Installed: fwInfo.MicroCodeVersion,
 							Metadata: map[string]string{
 								"Intel_ME_version": fwInfo.MEVersion,
 							},

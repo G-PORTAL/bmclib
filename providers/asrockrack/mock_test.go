@@ -74,7 +74,6 @@ func mockASRockBMC() *httptest.Server {
 	handler.HandleFunc("/api/session", session)
 	handler.HandleFunc("/api/asrr/fw-info", fwinfo)
 	handler.HandleFunc("/api/fru", fruinfo)
-	handler.HandleFunc("/api/asrr/inventory_info", inventoryinfo)
 	handler.HandleFunc("/api/sensors", sensorsinfo)
 	handler.HandleFunc("/api/asrr/getbioscode", biosPOSTCodeinfo)
 	handler.HandleFunc("/api/chassis-status", chassisStatusInfo)

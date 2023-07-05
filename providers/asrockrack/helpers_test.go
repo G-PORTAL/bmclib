@@ -12,10 +12,9 @@ func Test_FirmwareInfo(t *testing.T) {
 		BMCVersion:       "0.01.00",
 		BIOSVersion:      "L2.07B",
 		MEVersion:        "5.1.3.78",
-		MicrocodeVersion: "000000ca",
+		MicroCodeVersion: "000000ca",
 		CPLDVersion:      "N/A",
-		CMVersion:        "0.13.01",
-		BPBVersion:       "0.0.002.0",
+		BPVersion:        "0.0.002.0",
 		NodeID:           "2",
 	}
 
@@ -58,7 +57,7 @@ func Test_fruInfo(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	assert.Equal(t, "ASRockRack", fruResp.Board.Manufacturer)
+	assert.Equal(t, 1, len(fruResp))
 }
 
 func Test_sensors(t *testing.T) {
