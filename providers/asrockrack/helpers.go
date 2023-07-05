@@ -40,29 +40,26 @@ type biosPOSTCode struct {
 	PostData   int `json:"postdata"`
 }
 
-type hostInterfaceBaseboardInfo []struct {
-	BaseboardInfo    []baseboardInfo    `json:"baseboard_info"`
-	NetworkInterface []networkInterface `json:"NetworkInterface"`
-}
-type baseboardInfo struct {
-	Name            string `json:"Name"`
-	Description     string `json:"Description"`
-	FirmwareVersion string `json:"FirmwareVersion"`
-	Model           string `json:"Model"`
-	State           string `json:"State"`
-	PowerState      string `json:"PowerState"`
-}
-type networkInterface struct {
-	ID                  int    `json:"id"`
-	Name                string `json:"Name"`
-	MACAddress          string `json:"MACAddress"`
-	InterfaceEnabled    string `json:"InterfaceEnabled"`
-	IPv4Addresses       string `json:"IPv4Addresses"`
-	HostName            string `json:"HostName"`
-	State               string `json:"State"`
-	FullDuplex          string `json:"FullDuplex"`
-	PermanentMACAddress string `json:"PermanentMACAddress"`
-	Wwpn                string `json:"WWPN"`
+type networkInfo []struct {
+	ID             int    `json:"id"`
+	InterfaceName  string `json:"interface_name"`
+	ChannelNumber  int    `json:"channel_number"`
+	LanEnable      int    `json:"lan_enable"`
+	MacAddress     string `json:"mac_address"`
+	Ipv4Enable     int    `json:"ipv4_enable"`
+	Ipv4DhcpEnable int    `json:"ipv4_dhcp_enable"`
+	Ipv4Address    string `json:"ipv4_address"`
+	Ipv4Subnet     string `json:"ipv4_subnet"`
+	Ipv4Gateway    string `json:"ipv4_gateway"`
+	Ipv6Enable     int    `json:"ipv6_enable"`
+	Ipv6DhcpEnable int    `json:"ipv6_dhcp_enable"`
+	Ipv6Address    string `json:"ipv6_address"`
+	Ipv6Index      int    `json:"ipv6_index"`
+	Ipv6Prefix     int    `json:"ipv6_prefix"`
+	Ipv6Gateway    string `json:"ipv6_gateway"`
+	VlanEnable     int    `json:"vlan_enable"`
+	VlanID         int    `json:"vlan_id"`
+	VlanPriority   int    `json:"vlan_priority"`
 }
 
 // fru is part of a payload returned by the fru info endpoint
@@ -428,8 +425,8 @@ func (a *ASRockRack) postCodeInfo(ctx context.Context) (*biosPOSTCode, error) {
 }
 
 // Query the inventory info endpoint
-func (a *ASRockRack) hostInterfaceBaseboardInfo(ctx context.Context) (hostInterfaceBaseboardInfo, error) {
-	resp, statusCode, err := a.queryHTTPS(ctx, "api/host_inventory/host_interface_baseboard_info", "GET", nil, nil, 0)
+func (a *ASRockRack) networkInfo(ctx context.Context) (networkInfo, error) {
+	resp, statusCode, err := a.queryHTTPS(ctx, "api/settings/network", "GET", nil, nil, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -438,7 +435,7 @@ func (a *ASRockRack) hostInterfaceBaseboardInfo(ctx context.Context) (hostInterf
 		return nil, fmt.Errorf("non 200 response: %d", statusCode)
 	}
 
-	b := hostInterfaceBaseboardInfo{}
+	b := networkInfo{}
 	err = json.Unmarshal(resp, &b)
 	if err != nil {
 		return nil, err

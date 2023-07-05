@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
-
 	"github.com/bmc-toolbox/common"
+	"github.com/stmcginnis/gofish/redfish"
+	"net"
 )
 
 // Inventory returns hardware and firmware inventory
@@ -153,32 +153,48 @@ func (a *ASRockRack) systemAttributes(ctx context.Context, device *common.Device
 
 	device.Metadata["node_id"] = fwInfo.NodeID
 
-	baseBoardInfo, err := a.hostInterfaceBaseboardInfo(ctx)
+	networkInterfaces, err := a.networkInfo(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, info := range baseBoardInfo {
-		for _, nic := range info.NetworkInterface {
-			macAddress, err := net.ParseMAC(nic.MACAddress)
-			if err != nil {
-				continue
-			}
-
-			device.NICs = append(device.NICs, &common.NIC{
-				ID: fmt.Sprintf("%v", nic.ID),
-				NICPorts: []*common.NICPort{
-					{
-						ID: fmt.Sprintf("%v", nic.ID),
-						// gigabit ethernet
-						SpeedBits:  1000000000,
-						MacAddress: macAddress.String(),
-						LinkStatus: nic.InterfaceEnabled,
-					},
-				},
-			})
-
+	for _, nic := range networkInterfaces {
+		macAddress, err := net.ParseMAC(nic.MacAddress)
+		if err != nil {
+			continue
 		}
+
+		linkStatus := redfish.LinkDownLinkStatus
+		if nic.LanEnable == 1 {
+			linkStatus = redfish.LinkUpLinkStatus
+		}
+
+		ips := make([]net.IP, 0)
+		if nic.Ipv4Address != "0.0.0.0" {
+			stringMask := net.IPMask(net.ParseIP(nic.Ipv4Subnet).To4())
+			length, _ := stringMask.Size()
+			parsedIP, _, err := net.ParseCIDR(fmt.Sprintf("%s/%d", nic.Ipv4Address, length))
+
+			if err == nil && parsedIP != nil {
+				ips = append(ips, parsedIP)
+			} else {
+				a.log.Info("invalid ipv4 address", "address", fmt.Sprintf("%s/%d", nic.Ipv4Address, length))
+			}
+		}
+
+		device.NICs = append(device.NICs, &common.NIC{
+			ID: fmt.Sprintf("%v", nic.InterfaceName),
+			NICPorts: []*common.NICPort{
+				{
+					ID: nic.InterfaceName,
+					// gigabit ethernet
+					SpeedBits:   1000000000,
+					MacAddress:  macAddress.String(),
+					LinkStatus:  string(linkStatus),
+					IPAddresses: ips,
+				},
+			},
+		})
 
 	}
 

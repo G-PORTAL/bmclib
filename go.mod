@@ -2,6 +2,8 @@ module github.com/bmc-toolbox/bmclib/v2
 
 go 1.18
 
+replace github.com/bmc-toolbox/common => ../bmc-common
+
 require (
 	github.com/bmc-toolbox/common v0.0.0-20230220061748-93ff001f4a1d
 	github.com/bombsimon/logrusr/v2 v2.0.1
